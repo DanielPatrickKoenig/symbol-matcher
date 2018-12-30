@@ -1,0 +1,26 @@
+{
+  "name": "symbol-matcher",
+  "version": "1.0.0",
+  "description": "A simple game of symbol matching",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanielPatrickKoenig/symbol-matcher.git"
+  },
+  "author": "Dan Koenig <dpkoenig27@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "path": "^0.12.7",
+    "pixi-projection": "^0.2.2",
+    "pixi.js": "^4.8.4"
+  },
+  "bugs": {
+    "url": "https://github.com/DanielPatrickKoenig/symbol-matcher/issues"
+  },
+  "homepage": "https://github.com/DanielPatrickKoenig/symbol-matcher#readme"
+}

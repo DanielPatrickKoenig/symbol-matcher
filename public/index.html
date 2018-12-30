@@ -1,0 +1,130 @@
+<html>
+    <head>
+        <script src="libs/js/pixi.min.js"></script>
+        <script src="libs/js/pixi-projection.js"></script>
+        <script src="js/pixi-utils.js"></script>
+        <script src="js/v4v.js"></script>
+        <script src="js/drawhex.js"></script>
+        <style>
+            #app_container{
+                width: 900px;
+                height: 800px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app_container"></div>
+    </body>
+    <script>
+        var hexSlot = (function (tx) {
+            
+            var container = new PIXI.Container();
+
+            
+
+            var margin = 80;
+            var txtr = pixiUtils.createImage(tx);//('images/pekin-ducklings_01.jpg');
+            container.addChild(txtr);
+            var hex = drawHex({x:0,y:0},margin);
+            var staticTxtr = new PIXI.Sprite(tx);
+            staticTxtr.x = hex.getInitialFootprint().x;
+            staticTxtr.y = hex.getInitialFootprint().y;
+            staticTxtr.width = hex.getInitialFootprint().width;
+            staticTxtr.height = hex.getInitialFootprint().height;
+            container.addChild(staticTxtr);
+            var shape = new PIXI.Graphics();
+            container.addChild(shape);
+            txtr.mask = shape;
+            staticTxtr.mask = shape;
+            var border = new PIXI.Graphics();
+            container.addChild(border);
+
+            function onUpdate(position){
+                console.log(hex.getInitialFootprint());
+                // hex.reposition({x:e.pageX,y:e.pageY});
+                hex.reposition({x:position.x-container.x,y:position.y-container.y});
+                var quad = [hex.getCorners()[3],hex.getCorners()[0],hex.getCorners()[1],hex.getCorners()[2]];
+                txtr.proj.mapBilinearSprite(txtr, quad);
+                shape.clear();
+                pixiUtils.createPolygon(hex.getHexPoints(), shape);
+                border.clear();
+                pixiUtils.createPolygon(hex.getHexPoints(), border, {opacity:0,strokeOpacity:1,strokeColor:0x000000,strokeWidth:3});
+                if(hex.isDistorted()){
+                    staticTxtr.alpha = 0;
+                    txtr.alpha = 1;
+                }
+                else{
+                    staticTxtr.alpha = 1;
+                    txtr.alpha = 0;
+                }
+            }
+
+            
+
+            return {container: container, update: onUpdate};
+        });
+
+        
+
+        var appContainer = document.getElementById("app_container");
+        var pixiApp = new PIXI.Application(appContainer.getBoundingClientRect().width, appContainer.getBoundingClientRect().height, {antialias: true, backgroundColor: 0xeeeeee});
+        appContainer.appendChild(pixiApp.view);
+
+        var gpc = new PIXI.Graphics();
+        pixiUtils.createPolygon([{x:0,y:0},{x:300,y:0},{x:300,y:300}],gpc);
+        gpc.lineStyle(2, 0x00CC00, 1);
+        gpc.beginFill(0xffff00, 1);
+        gpc.drawCircle(150, 150, 25);
+        gpc.endFill();
+        pixiApp.stage.addChild(gpc);
+
+        var center = {x:appContainer.getBoundingClientRect().width/2,y:appContainer.getBoundingClientRect().height/2};
+        // var textures = [PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg'),PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg'),PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg')];
+        var textures = [pixiUtils.createTextureFromGraphics(gpc),pixiUtils.createTextureFromGraphics(gpc),pixiUtils.createTextureFromGraphics(gpc)];
+        var hexSlots = [];
+        for(var i = 0;i<textures.length;i++){
+            var hs = hexSlot(textures[i]);
+            hs.container.x = 200 + (i*150);
+            hs.container.y = 200;
+            pixiApp.stage.addChild(hs.container);
+            hexSlots.push(hs);
+            hs.update({x:center.x,y:center.y});
+        }
+
+        var dragProps = {down:{x:0,y:0},dragging:false,hexPositions:[]};
+        
+        document.getElementsByTagName('canvas')[0].addEventListener('mousedown',function(e){
+            dragProps.dragging = true;
+            dragProps.down.x = e.pageX;
+            dragProps.down.y = e.pageY;
+            dragProps.hexPositions = [];
+            for(var i = 0;i<hexSlots.length;i++)
+            {
+                dragProps.hexPositions.push({x:hexSlots[i].container.x,y:hexSlots[i].container.y});
+            }
+        });
+        document.getElementsByTagName('canvas')[0].addEventListener('mousemove',function(e){
+            var xPos = e.pageX-dragProps.down.x;
+            var yPos = e.pageY-dragProps.down.y;
+            if(dragProps.dragging){
+                for(var i = 0;i<hexSlots.length;i++)
+                {
+                    hexSlots[i].container.x = dragProps.hexPositions[i].x+xPos;
+                    hexSlots[i].container.y = dragProps.hexPositions[i].y+yPos;
+                    hexSlots[i].update({x:center.x,y:center.y});
+                }
+            }
+        });
+        document.getElementsByTagName('canvas')[0].addEventListener('mouseup',function(e){
+            dragProps.dragging = false;
+        });
+        /*
+        document.getElementsByTagName('canvas')[0].addEventListener('mousemove',function(e){
+            for(var i = 0;i<hexSlots.length;i++){
+                hexSlots[i].update({x:e.pageX,y:e.pageY});
+            }
+            
+        });
+        //*/
+    </script>
+</html>
