@@ -17,13 +17,14 @@
         <div id="app_container"></div>
     </body>
     <script>
-        var hexSlot = (function (tx) {
+        var tRadius = 80; 
+        var hexSlot = (function (tx,radius) {
             
             var container = new PIXI.Container();
 
             
 
-            var tileRadius = 80;
+            var tileRadius = radius;
             var txtr = pixiUtils.createImage(tx);//('images/pekin-ducklings_01.jpg');
             container.addChild(txtr);
             var hex = drawHex({x:0,y:0},tileRadius);
@@ -69,27 +70,29 @@
         }
         function createTile(symbolCount){
             var graphics = new PIXI.Graphics();
-            pixiUtils.createPolygon([{x:0,y:0},{x:150,y:0},{x:150,y:150},{x:0,y:150}],graphics,{opacity:0});
+            var baseSymbolSize = {width:180,height:200};
+            pixiUtils.createPolygon([{x:0,y:0},{x:baseSymbolSize.width,y:0},{x:baseSymbolSize.width,y:baseSymbolSize.height},{x:0,y:baseSymbolSize.height}],graphics,{opacity:0});
             var tileIndexes = [];
-            switch (symbolCount) {
-                case 1:
-                {
-                    var scale = 1;
-                    tileIndexes.push(getIndex());
-                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:25,y:25}),graphics);
-                    break;
-                }
-                case 2:
-                {
-                    var scale = .5;
-                    tileIndexes.push(getIndex());
-                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:50,y:20}),graphics);
-                    tileIndexes.push(getIndex());
-                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:50,y:80}),graphics);
-                    
-                    break;
-                }
+            var tileCenter = {x:baseSymbolSize.width/2,y:baseSymbolSize.height/2};
+            // console.log(tileCenter);
+            var scale = .25 + (.5/symbolCount);
+            var distance = 60 - (25*scale);
+            var offsetShift = {x:0,y:0};//{x:(baseSymbolSize*(1+scale))*scale,y:(baseSymbolSize*1.66)*scale};
+            var symbolTotal = symbolCount;
+            if(symbolCount%2 != 0 && symbolCount != 3) {
+                symbolTotal -= 1;
+                tileIndexes.push(getIndex());
+                pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,tileCenter),graphics);
             }
+            for(var i = 0;i<symbolTotal;i++){
+                var angle = (360/symbolTotal)*i;
+                var pos = {x: v4v.orbit(tileCenter.x,distance,angle,"cos"), y: v4v.orbit(tileCenter.y,distance,angle,"sin")};
+                tileIndexes.push(getIndex());
+                pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,pos),graphics);
+                // tileIndexes.push(getIndex());
+                // pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:50,y:80}),graphics);
+            }
+            // pixiApp.stage.addChild(graphics);
             return {texture:pixiUtils.createTextureFromGraphics(graphics),indexes:tileIndexes};
         }
 
@@ -100,11 +103,11 @@
         appContainer.appendChild(pixiApp.view);
         var center = {x:appContainer.getBoundingClientRect().width/2,y:appContainer.getBoundingClientRect().height/2};
         
-        var symbolCount = 2;
+        var symbolCount = 7;
         var textures = [createTile(symbolCount).texture,createTile(symbolCount).texture,createTile(symbolCount).texture];
         var hexSlots = [];
         for(var i = 0;i<textures.length;i++){
-            var hs = hexSlot(textures[i]);
+            var hs = hexSlot(textures[i],tRadius);
             hs.container.x = 200 + (i*150);
             hs.container.y = 200;
             pixiApp.stage.addChild(hs.container);
