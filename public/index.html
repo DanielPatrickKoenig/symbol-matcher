@@ -3,6 +3,7 @@
         <script src="libs/js/pixi.min.js"></script>
         <script src="libs/js/pixi-projection.js"></script>
         <script src="js/pixi-utils.js"></script>
+        <script src="js/symbol-manifest.js"></script>
         <script src="js/v4v.js"></script>
         <script src="js/drawhex.js"></script>
         <style>
@@ -22,10 +23,10 @@
 
             
 
-            var margin = 80;
+            var tileRadius = 80;
             var txtr = pixiUtils.createImage(tx);//('images/pekin-ducklings_01.jpg');
             container.addChild(txtr);
-            var hex = drawHex({x:0,y:0},margin);
+            var hex = drawHex({x:0,y:0},tileRadius);
             var staticTxtr = new PIXI.Sprite(tx);
             staticTxtr.x = hex.getInitialFootprint().x;
             staticTxtr.y = hex.getInitialFootprint().y;
@@ -63,24 +64,44 @@
 
             return {container: container, update: onUpdate};
         });
+        function getIndex(){
+            return Math.floor(Math.random()*symbolManifest.count);
+        }
+        function createTile(symbolCount){
+            var graphics = new PIXI.Graphics();
+            pixiUtils.createPolygon([{x:0,y:0},{x:150,y:0},{x:150,y:150},{x:0,y:150}],graphics,{opacity:0});
+            var tileIndexes = [];
+            switch (symbolCount) {
+                case 1:
+                {
+                    var scale = 1;
+                    tileIndexes.push(getIndex());
+                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:25,y:25}),graphics);
+                    break;
+                }
+                case 2:
+                {
+                    var scale = .5;
+                    tileIndexes.push(getIndex());
+                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:50,y:20}),graphics);
+                    tileIndexes.push(getIndex());
+                    pixiUtils.createPolygon(symbolManifest.getSymbol(tileIndexes[tileIndexes.length-1],scale,{x:50,y:80}),graphics);
+                    
+                    break;
+                }
+            }
+            return {texture:pixiUtils.createTextureFromGraphics(graphics),indexes:tileIndexes};
+        }
 
         
 
         var appContainer = document.getElementById("app_container");
         var pixiApp = new PIXI.Application(appContainer.getBoundingClientRect().width, appContainer.getBoundingClientRect().height, {antialias: true, backgroundColor: 0xeeeeee});
         appContainer.appendChild(pixiApp.view);
-
-        var gpc = new PIXI.Graphics();
-        pixiUtils.createPolygon([{x:0,y:0},{x:300,y:0},{x:300,y:300}],gpc);
-        gpc.lineStyle(2, 0x00CC00, 1);
-        gpc.beginFill(0xffff00, 1);
-        gpc.drawCircle(150, 150, 25);
-        gpc.endFill();
-        pixiApp.stage.addChild(gpc);
-
         var center = {x:appContainer.getBoundingClientRect().width/2,y:appContainer.getBoundingClientRect().height/2};
-        // var textures = [PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg'),PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg'),PIXI.Texture.fromImage('images/pekin-ducklings_01.jpg')];
-        var textures = [pixiUtils.createTextureFromGraphics(gpc),pixiUtils.createTextureFromGraphics(gpc),pixiUtils.createTextureFromGraphics(gpc)];
+        
+        var symbolCount = 2;
+        var textures = [createTile(symbolCount).texture,createTile(symbolCount).texture,createTile(symbolCount).texture];
         var hexSlots = [];
         for(var i = 0;i<textures.length;i++){
             var hs = hexSlot(textures[i]);
