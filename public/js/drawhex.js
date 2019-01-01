@@ -22,7 +22,7 @@ var drawHex = (function(center,shapeRadius){
 
     for(var i = 0;i<totalPoints;i++){
         var pos = {x: v4v.orbit(center.x, shapeRadius, (360/totalPoints)*i, "cos"), y: v4v.orbit(center.y, shapeRadius, (360/totalPoints)*i, "sin")};
-        var fp = v4v.flexPoint(pos.x, pos.y, shapeRadius*1.6, shapeRadius*.4, false);
+        var fp = v4v.flexPoint(pos.x, pos.y, shapeRadius*1.6, shapeRadius*.6, false);
         // var circle = v4v.circle(stage,{cx:pos.x,cy:pos.y,r:2});
         pointList.push({point:fp});
     }
