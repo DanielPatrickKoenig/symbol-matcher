@@ -8,6 +8,11 @@
         <script src="js/drawhex.js"></script>
         <style>
             #app_container{
+                position: fixed;
+                left:50%;
+                top:50%;
+                margin-left:-450px;
+                margin-top: -400px;
                 width: 900px;
                 height: 800px;
             }
@@ -17,7 +22,6 @@
         <div id="app_container"></div>
     </body>
     <script>
-        var tRadius = 80; 
         var hexSlot = (function (tx,radius) {
             
             var container = new PIXI.Container();
@@ -96,26 +100,46 @@
             return {texture:pixiUtils.createTextureFromGraphics(graphics),indexes:tileIndexes};
         }
 
-        
+        var tRadius = 120; 
+        var spacing = {x:Math.abs(v4v.orbit(0,tRadius,360/6,"cos")*2),y:Math.abs(v4v.orbit(0,tRadius,360/6,"sin")*3)};
+        console.log(spacing);
 
         var appContainer = document.getElementById("app_container");
         var pixiApp = new PIXI.Application(appContainer.getBoundingClientRect().width, appContainer.getBoundingClientRect().height, {antialias: true, backgroundColor: 0xeeeeee});
         appContainer.appendChild(pixiApp.view);
         var center = {x:appContainer.getBoundingClientRect().width/2,y:appContainer.getBoundingClientRect().height/2};
-        
-        var symbolCount = 7;
-        var textures = [createTile(symbolCount).texture,createTile(symbolCount).texture,createTile(symbolCount).texture];
+        var bgGraph = new PIXI.Graphics();
+        pixiUtils.createPolygon([{x:0,y:0},{x:appContainer.getBoundingClientRect().width,y:0},{x:appContainer.getBoundingClientRect().width,y:appContainer.getBoundingClientRect().height},{x:0,y:appContainer.getBoundingClientRect().height}],bgGraph,{opacity:.7});
+        pixiUtils.createPolygon(drawHex({x:appContainer.getBoundingClientRect().width/2,y:appContainer.getBoundingClientRect().height/2},tRadius*1.8).getHexPoints(),bgGraph,{color:0xffffff});
+        pixiApp.stage.addChild(bgGraph);
+        var symbolCount = 3;
+        var tileCount = 100;
+        var textures = [];
+        for(var i = 0;i<tileCount;i++){
+            var tile = createTile(symbolCount);
+            textures.push(tile.texture)
+        }
         var hexSlots = [];
+        var h = 0;
+        var v = 0;
+        var cols = 10;
         for(var i = 0;i<textures.length;i++){
+            rowOffset = v%2==0 ? 0 : .5;
             var hs = hexSlot(textures[i],tRadius);
-            hs.container.x = 200 + (i*150);
-            hs.container.y = 200;
-            pixiApp.stage.addChild(hs.container);
+            hs.container.x = 200 + spacing.x*(h+rowOffset);
+            hs.container.y = 200 + spacing.y*v;;
+            pixiApp.stage.addChild(hs.container)
             hexSlots.push(hs);
             hs.update({x:center.x,y:center.y});
+            h++;
+            if(h>cols){
+                h = 0;
+                v++;
+            }
         }
 
         var dragProps = {down:{x:0,y:0},dragging:false,hexPositions:[]};
+        var mousePos = {x:0,y:0};
         
         document.getElementsByTagName('canvas')[0].addEventListener('mousedown',function(e){
             dragProps.dragging = true;
@@ -128,6 +152,8 @@
             }
         });
         document.getElementsByTagName('canvas')[0].addEventListener('mousemove',function(e){
+            
+            // mousePos = {x:e.pageX,y:e.pageY};
             var xPos = e.pageX-dragProps.down.x;
             var yPos = e.pageY-dragProps.down.y;
             if(dragProps.dragging){
@@ -142,6 +168,53 @@
         document.getElementsByTagName('canvas')[0].addEventListener('mouseup',function(e){
             dragProps.dragging = false;
         });
+        document.addEventListener('touchstart', function (e) {
+            dragProps.dragging = true;
+            var touches = e.changedTouches;
+            dragProps.down.x = touches[0].pageX;
+            dragProps.down.y = touches[0].pageY;
+            dragProps.hexPositions = [];
+            for(var i = 0;i<hexSlots.length;i++)
+            {
+                dragProps.hexPositions.push({x:hexSlots[i].container.x,y:hexSlots[i].container.y});
+            }
+            // e.preventDefault();
+            var touches = e.changedTouches;
+            touchPos = { x: touches[0].pageX, y: touches[0].pageY };
+            keyStates.up.active = true;
+        }, false);
+        document.addEventListener('touchmove', function (e) {
+            // e.preventDefault();
+            var touches = e.changedTouches;
+            var xPos = touches[0].pageX-dragProps.down.x;
+            var yPos = touches[0].pageY-dragProps.down.y;
+            if(dragProps.dragging){
+                for(var i = 0;i<hexSlots.length;i++)
+                {
+                    hexSlots[i].container.x = dragProps.hexPositions[i].x+xPos;
+                    hexSlots[i].container.y = dragProps.hexPositions[i].y+yPos;
+                    hexSlots[i].update({x:center.x,y:center.y});
+                }
+            }
+            // console.log(turn);
+        }, false);
+        document.addEventListener('touchend', function (e) {
+            // e.preventDefault();
+            dragProps.dragging = false;
+        }, false);
+        // setInterval(function(){
+        //     var xPos = mousePos.x-dragProps.down.x;
+        //     var yPos = mousePos.y-dragProps.down.y;
+        //     if(dragProps.dragging){
+        //         for(var i = 0;i<hexSlots.length;i++)
+        //         {
+        //             hexSlots[i].container.x = dragProps.hexPositions[i].x+xPos;
+        //             hexSlots[i].container.y = dragProps.hexPositions[i].y+yPos;
+        //             hexSlots[i].update({x:center.x,y:center.y});
+        //         }
+        //     }
+        // },30);
+        
         /*
         document.getElementsByTagName('canvas')[0].addEventListener('mousemove',function(e){
             for(var i = 0;i<hexSlots.length;i++){
